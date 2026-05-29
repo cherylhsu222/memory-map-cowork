@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>南澳記憶庫</title>
+    <meta
+      name="description"
+      content="南澳記憶庫：以真實地圖、歷史圖層與投稿審核機制整理地方故事、老照片與生活記憶。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero-copy">
+        <div>
+          <p class="eyebrow">Nanao Memory Archive</p>
+          <h1>南澳記憶庫</h1>
+        </div>
+      </section>
+
+      <section class="prototype-shell">
+        <aside class="memory-sidebar">
+          <div class="sidebar-head">
+            <div>
+              <p>探索記憶</p>
+              <span>長期共編的南澳記憶圖庫</span>
+            </div>
+            <span id="memory-count">0 筆內容</span>
+          </div>
+
+          <div class="search-shell">
+            <input id="search-input" placeholder="搜尋人名、地名、主題、標籤" type="text" />
+          </div>
+
+          <div class="filter-row">
+            <div class="chip-group" id="type-chip-group">
+              <button class="chip is-active" data-type="all" type="button">全部</button>
+              <button class="chip" data-type="photo" type="button">老照片</button>
+              <button class="chip" data-type="story" type="button">生活故事</button>
+            </div>
+
+            <div class="select-group">
+              <label class="select-shell">
+                <select id="village-select"></select>
+              </label>
+              <label class="select-shell">
+                <select id="era-select"></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="memory-list" id="memory-list"></div>
+
+          <section class="source-notice">
+            <div class="notice-block">
+              <p class="section-label">來源與版權</p>
+              <p>網路舊照片可作為測試與研究示意，但頁面上需要清楚標示來源，例如網站、資料庫或口述訪談整理。</p>
+            </div>
+            <div class="notice-block caution">
+              <p class="section-label">免責聲明</p>
+              <p>本頁面內容僅供學術研究與測試使用。如有侵權或資料需下架，請聯繫管理者處理。</p>
+            </div>
+          </section>
+        </aside>
+
+        <section class="map-stage">
+          <div class="mapbox-shell" id="main-map"></div>
+
+          <article class="map-popup-card hidden" id="map-popup-card">
+            <div class="popup-image" id="popup-image">
+              <span id="popup-category"></span>
+            </div>
+            <div class="popup-copy">
+              <div class="popup-meta">
+                <span id="popup-place"></span>
+                <span id="popup-period"></span>
+              </div>
+              <h2 id="popup-title"></h2>
+              <div class="tag-row" id="popup-tags"></div>
+              <p id="popup-text"></p>
+              <div class="popup-source">
+                <span id="popup-sharer"></span>
+                <span id="popup-source"></span>
+              </div>
+              <div class="popup-footer">
+                <button id="popup-toggle" type="button">完整內容…</button>
+              </div>
+            </div>
+          </article>
+
+          <div class="map-tools">
+            <button class="map-tool-button" id="layer-toggle" type="button">圖層</button>
+            <div class="layer-panel hidden" id="layer-panel">
+              <div class="layer-panel-head">
+                <span class="layer-stack-icon"></span>
+                <div>
+                  <strong>地圖圖層</strong>
+                  <p>直接串接中央研究院台灣百年歷史地圖 WMTS，先挑適合南澳走讀的年代圖層。</p>
+                </div>
+              </div>
+              <div class="layer-options" id="layer-options"></div>
+              <p class="layer-footnote">有些歷史圖層在特定比例尺或區域可能暫時空白，所以這裡先保留南澳範圍較穩定的圖層。</p>
+            </div>
+          </div>
+
+          <div class="floating-composer">
+            <div class="composer-panel hidden" id="composer-panel">
+              <section class="submit-panel">
+                <div class="submit-head">
+                  <div>
+                    <p class="section-label">共編入口</p>
+                    <h2>新增一筆記憶</h2>
+                  </div>
+                  <button class="ghost-button" id="close-composer" type="button">關閉</button>
+                </div>
+
+                <div class="submit-title">
+                  <span>民眾送出後會先進入待審核，你在後台通過後才會顯示在地圖上。</span>
+                </div>
+
+                <form class="submit-form" id="memory-form">
+                  <label class="field">
+                    <span>照片</span>
+                    <label class="upload-shell">
+                      <div class="upload-icon">＋</div>
+                      <div>
+                        <strong id="upload-label">上傳照片或舊影像</strong>
+                        <p>可直接上傳一張照片作為封面。</p>
+                      </div>
+                      <input accept="image/*" class="file-input" id="photo-input" type="file" />
+                    </label>
+                  </label>
+
+                  <label class="field">
+                    <span>標題</span>
+                    <input id="title-input" placeholder="例如：南澳街上的老市場" type="text" />
+                  </label>
+
+                  <label class="field">
+                    <span>地點</span>
+                    <input id="place-input" placeholder="例如：武塔村附近、南澳街上" type="text" />
+                  </label>
+
+                  <label class="field">
+                    <span>時間</span>
+                    <input id="period-input" placeholder="例如：1970 年代、遷村前後、小時候" type="text" />
+                  </label>
+
+                  <label class="field">
+                    <span>故事內容</span>
+                    <textarea id="content-input" placeholder="建議 500 字內，簡單寫下你想分享的記憶。" rows="5"></textarea>
+                  </label>
+
+                  <label class="field">
+                    <span>分享者姓名或暱稱</span>
+                    <input id="sharer-input" placeholder="例如：林阿公、陳美玉、部落孩子" type="text" />
+                  </label>
+
+                  <div class="field">
+                    <span>分類與標籤</span>
+                    <div class="location-shell" id="category-options"></div>
+                    <div class="custom-tag-entry">
+                      <input id="custom-tag-input" placeholder="自行新增標籤，例如：溪流、祭儀、舊道路" type="text" />
+                      <button class="ghost-button" id="add-tag-button" type="button">新增標籤</button>
+                    </div>
+                    <div class="tag-row" id="custom-tag-list"></div>
+                  </div>
+
+                  <div class="field">
+                    <span>地點設定</span>
+                    <div class="location-shell">
+                      <button class="choice-pill is-active" type="button">點地圖選位置</button>
+                      <button class="choice-pill is-active" type="button">搜尋地名自動定位</button>
+                    </div>
+                    <div class="picker-search-row">
+                      <input id="picker-search-input" placeholder="輸入地名、山谷、路徑或機關名稱" type="text" />
+                      <button class="map-tool-button is-active" id="picker-search-button" type="button">搜尋定位</button>
+                      <button class="ghost-button" id="picker-locate-button" type="button">使用目前位置</button>
+                    </div>
+                    <div class="picker-caption">可直接搜尋地名、山谷或路徑，自動跳到位置；也可以手動點地圖微調。</div>
+                    <div class="picker-results hidden" id="picker-results"></div>
+                    <div class="picker-shell" id="picker-shell">
+                      <div class="picker-map" id="picker-map"></div>
+                    </div>
+                    <div class="picker-caption" id="picker-message">目前選點：24.45000, 121.80500</div>
+                  </div>
+
+                  <div class="submit-feedback hidden" id="submit-feedback"></div>
+
+                  <button class="primary-submit" id="submit-button" type="submit">送出記憶</button>
+                </form>
+              </section>
+            </div>
+
+            <button aria-label="開啟投稿" class="fab" id="fab-button" type="button">＋</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
