@@ -53,7 +53,7 @@ button {
 }
 
 .page-shell {
-  padding: 32px;
+  padding: 20px 24px 24px;
 }
 
 .hero-copy {
@@ -61,7 +61,7 @@ button {
   justify-content: space-between;
   gap: 28px;
   align-items: end;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .eyebrow,
@@ -76,7 +76,7 @@ button {
 .hero-copy h1 {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: clamp(38px, 4vw, 64px);
+  font-size: clamp(34px, 3.8vw, 56px);
   line-height: 1.04;
 }
 
@@ -84,7 +84,7 @@ button {
   display: grid;
   grid-template-columns: 390px minmax(0, 1fr);
   gap: 20px;
-  min-height: calc(100vh - 170px);
+  min-height: calc(100vh - 110px);
 }
 
 .memory-sidebar,
@@ -99,8 +99,8 @@ button {
 .memory-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 22px;
+  gap: 14px;
+  padding: 18px;
 }
 
 .sidebar-head {
@@ -372,8 +372,7 @@ button {
 }
 
 .source-notice {
-  display: grid;
-  gap: 10px;
+  display: none;
 }
 
 .notice-block {
@@ -388,7 +387,7 @@ button {
 
 .map-stage {
   position: relative;
-  min-height: 760px;
+  min-height: clamp(520px, calc(100vh - 150px), 660px);
   overflow: hidden;
 }
 
@@ -399,14 +398,14 @@ button {
 }
 
 .mapbox-shell {
-  min-height: 760px;
+  min-height: clamp(520px, calc(100vh - 150px), 660px);
 }
 
 .map-popup-card {
   position: absolute;
   left: 20px;
   right: 20px;
-  bottom: 20px;
+  bottom: 16px;
   display: grid;
   grid-template-columns: 180px 1fr;
   gap: 18px;
@@ -687,17 +686,30 @@ button {
   }
 
   .map-stage {
-    min-height: 680px;
+    min-height: 560px;
   }
 
   .mapbox-shell {
-    min-height: 680px;
+    min-height: 560px;
   }
 }
 
 @media (max-width: 720px) {
   .page-shell {
-    padding: 16px;
+    padding: 14px;
+  }
+
+  .hero-copy {
+    margin-bottom: 10px;
+  }
+
+  .hero-copy h1 {
+    font-size: 46px;
+  }
+
+  .prototype-shell {
+    gap: 14px;
+    min-height: auto;
   }
 
   .map-popup-card {
@@ -710,6 +722,11 @@ button {
 
   .composer-panel {
     width: calc(100vw - 32px);
+  }
+
+  .map-stage,
+  .mapbox-shell {
+    min-height: 430px;
   }
 
   .custom-tag-entry,
