@@ -686,6 +686,16 @@ async function uploadImage(file) {
   return data.publicUrl;
 }
 
+function formatSupabaseFailure(stepLabel, error) {
+  const message = error?.message || "未知錯誤";
+
+  if (message.includes("Failed to fetch")) {
+    return `${stepLabel}失敗：目前網站有成功載入，但連到 Supabase 時沒有拿到回應。通常是 Storage bucket / 資料表權限還沒設好，或瀏覽器把請求擋掉。`;
+  }
+
+  return `${stepLabel}失敗：${message}`;
+}
+
 async function submitMemory(event) {
   event.preventDefault();
 
@@ -706,7 +716,16 @@ async function submitMemory(event) {
     elements.submitButton.textContent = "送出中…";
     clearFeedback();
 
-    const imageUrl = await uploadImage(values.photo);
+    let imageUrl = null;
+    if (values.photo) {
+      try {
+        imageUrl = await uploadImage(values.photo);
+      } catch (error) {
+        setFeedback(formatSupabaseFailure("圖片上傳", error), true);
+        return;
+      }
+    }
+
     const payload = {
       title: values.title,
       content: values.content,
@@ -723,7 +742,10 @@ async function submitMemory(event) {
     };
 
     const { error } = await state.supabase.from("memories").insert(payload);
-    if (error) throw error;
+    if (error) {
+      setFeedback(formatSupabaseFailure("資料寫入", error), true);
+      return;
+    }
 
     elements.form.reset();
     elements.uploadLabel.textContent = "上傳照片或舊影像";
@@ -733,7 +755,7 @@ async function submitMemory(event) {
     renderCustomTags();
     setFeedback("投稿成功，這筆內容已進入待審核。你在 Supabase 後台通過後，才會顯示到地圖上。");
   } catch (error) {
-    setFeedback(`送出失敗：${error.message}`, true);
+    setFeedback(formatSupabaseFailure("送出", error), true);
   } finally {
     state.uploading = false;
     elements.submitButton.disabled = false;
