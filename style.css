@@ -305,7 +305,7 @@ button {
 .popup-image span {
   position: absolute;
   left: 12px;
-  bottom: 12px;
+  bottom: 8px;
   z-index: 1;
   padding: 8px 12px;
   border-radius: 999px;
@@ -390,7 +390,7 @@ button {
 
 .map-stage {
   position: relative;
-  min-height: clamp(390px, 56vh, 500px);
+  min-height: clamp(440px, 60vh, 540px);
   overflow: hidden;
 }
 
@@ -401,7 +401,7 @@ button {
 }
 
 .mapbox-shell {
-  min-height: clamp(390px, 56vh, 500px);
+  min-height: clamp(440px, 60vh, 540px);
 }
 
 .map-popup-card {
