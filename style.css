@@ -102,6 +102,7 @@ button {
   flex-direction: column;
   gap: 14px;
   padding: 18px;
+  min-height: calc(100vh - 110px);
 }
 
 .sidebar-head {
