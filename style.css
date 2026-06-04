@@ -84,7 +84,8 @@ button {
   display: grid;
   grid-template-columns: 390px minmax(0, 1fr);
   gap: 20px;
-  min-height: calc(100vh - 110px);
+  min-height: auto;
+  align-items: start;
 }
 
 .memory-sidebar,
@@ -389,7 +390,7 @@ button {
 
 .map-stage {
   position: relative;
-  min-height: clamp(460px, calc(100vh - 190px), 580px);
+  min-height: clamp(340px, 50vh, 430px);
   overflow: hidden;
 }
 
@@ -400,7 +401,7 @@ button {
 }
 
 .mapbox-shell {
-  min-height: clamp(460px, calc(100vh - 190px), 580px);
+  min-height: clamp(340px, 50vh, 430px);
 }
 
 .map-popup-card {
