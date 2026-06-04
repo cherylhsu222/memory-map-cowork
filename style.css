@@ -84,7 +84,7 @@ button {
   display: grid;
   grid-template-columns: 390px minmax(0, 1fr);
   gap: 20px;
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - 145px);
   align-items: stretch;
 }
 
@@ -102,7 +102,7 @@ button {
   flex-direction: column;
   gap: 14px;
   padding: 18px;
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - 145px);
 }
 
 .sidebar-head {
@@ -230,7 +230,8 @@ button {
   flex-direction: column;
   gap: 12px;
   overflow: auto;
-  min-height: 260px;
+  min-height: 0;
+  flex: 1;
   padding-right: 4px;
 }
 
@@ -391,7 +392,7 @@ button {
 
 .map-stage {
   position: relative;
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - 145px);
   overflow: hidden;
 }
 
@@ -402,14 +403,14 @@ button {
 }
 
 .mapbox-shell {
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - 145px);
 }
 
 .map-popup-card {
   position: absolute;
   left: 20px;
   right: 20px;
-  bottom: 16px;
+  bottom: 18px;
   display: grid;
   grid-template-columns: 180px 1fr;
   gap: 18px;
