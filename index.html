@@ -42,9 +42,13 @@
 
           <div class="filter-row">
             <div class="chip-group" id="type-chip-group">
-              <button class="chip is-active" data-type="all" type="button">全部</button>
-              <button class="chip" data-type="photo" type="button">老照片</button>
-              <button class="chip" data-type="story" type="button">生活故事</button>
+              <button class="chip is-active" data-category="全部" type="button">全部</button>
+              <button class="chip" data-category="人物" type="button">人物</button>
+              <button class="chip" data-category="地景" type="button">地景</button>
+              <button class="chip" data-category="生活" type="button">生活</button>
+              <button class="chip" data-category="產業" type="button">產業</button>
+              <button class="chip" data-category="文化" type="button">文化</button>
+              <button class="chip" data-category="其他" type="button">其他</button>
             </div>
 
             <div class="select-group">
@@ -157,19 +161,10 @@
                   <div class="field">
                     <span>分類與標籤</span>
                     <div class="location-shell" id="category-options"></div>
-                    <div class="custom-tag-entry">
-                      <input id="custom-tag-input" placeholder="自行新增標籤，例如：溪流、祭儀、舊道路" type="text" />
-                      <button class="ghost-button" id="add-tag-button" type="button">新增標籤</button>
-                    </div>
-                    <div class="tag-row" id="custom-tag-list"></div>
                   </div>
 
                   <div class="field">
                     <span>地點設定</span>
-                    <div class="location-shell">
-                      <button class="choice-pill is-active" type="button">點地圖選位置</button>
-                      <button class="choice-pill is-active" type="button">搜尋地名自動定位</button>
-                    </div>
                     <div class="picker-search-row">
                       <input id="picker-search-input" placeholder="輸入地名、山谷、路徑或機關名稱" type="text" />
                       <button class="map-tool-button is-active" id="picker-search-button" type="button">搜尋定位</button>

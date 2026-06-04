@@ -10,7 +10,7 @@ const CONFIG = {
 const defaultCenter = [121.805, 24.45];
 const villageOptions = ["全部村落", "南澳村", "武塔村", "金洋村", "澳花村", "金岳村", "碧候村", "東岳村"];
 const eraOptions = ["全部年代", "1940 年代", "1950 年代", "1960 年代", "1970 年代", "1980 年代", "1990 年代", "2000 年代", "2010 年代", "2020 年代", "2026"];
-const categoryOptions = ["老照片", "生活故事", "遷村", "地景", "產業", "童年", "家族", "文化"];
+const categoryOptions = ["人物", "地景", "生活", "產業", "文化", "其他"];
 const historyLayerOptions = [
   { id: "none", label: "僅現代底圖", title: "Mapbox 現代底圖", tiles: null, source: "Mapbox" },
   {
@@ -110,14 +110,14 @@ const state = {
   supabase: null,
   memories: [],
   filteredMemories: [],
-  selectedType: "all",
+  selectedCategory: "全部",
   selectedVillage: "全部村落",
   selectedEra: "全部年代",
   search: "",
   selectedMemoryId: null,
-  expandedMemoryId: null,
-  selectedTags: ["生活故事"],
-  customTags: [],
+  listExpandedMemoryId: null,
+  popupExpanded: false,
+  draftCategory: "生活",
   activeLayerId: "none",
   pickerCoords: { lng: defaultCenter[0], lat: defaultCenter[1] },
   pickerResults: [],
@@ -143,6 +143,28 @@ function createSessionToken() {
 
 function localizeText(text = "") {
   return localizedReplacements.reduce((current, [from, to]) => current.replaceAll(from, to), text);
+}
+
+function normalizeCategory(category = "") {
+  const normalized = {
+    老照片: "生活",
+    生活故事: "生活",
+    遷村: "文化",
+    童年: "生活",
+    家族: "人物",
+    人物: "人物",
+    地景: "地景",
+    生活: "生活",
+    產業: "產業",
+    文化: "文化",
+    其他: "其他"
+  }[category];
+
+  return normalized || "其他";
+}
+
+function getDisplayTags(memory) {
+  return (memory.hashtags || []).filter((tag) => tag.replace(/^#/, "") !== memory.category);
 }
 
 function inferVillage(placeName) {
@@ -182,7 +204,7 @@ function mapMemoryRow(row) {
     periodLabel: row.period_text,
     decade: inferDecade(row.period_text),
     sharer: row.sharer_name,
-    category: row.category,
+    category: normalizeCategory(row.category),
     hashtags: (row.tags || []).map((tag) => (tag.startsWith("#") ? tag : `#${tag}`)),
     sourceLabel: row.source_label || "民眾投稿",
     position: [row.longitude, row.latitude],
@@ -233,9 +255,6 @@ function bindElements() {
     fabButton: document.querySelector("#fab-button"),
     closeComposer: document.querySelector("#close-composer"),
     categoryOptions: document.querySelector("#category-options"),
-    customTagInput: document.querySelector("#custom-tag-input"),
-    addTagButton: document.querySelector("#add-tag-button"),
-    customTagList: document.querySelector("#custom-tag-list"),
     pickerSearchInput: document.querySelector("#picker-search-input"),
     pickerSearchButton: document.querySelector("#picker-search-button"),
     pickerLocateButton: document.querySelector("#picker-locate-button"),
@@ -263,25 +282,16 @@ function renderCategoryOptions() {
   elements.categoryOptions.innerHTML = categoryOptions
     .map(
       (option) =>
-        `<button class="${state.selectedTags.includes(option) ? "choice-pill is-active" : "choice-pill"}" data-tag="${option}" type="button">${option}</button>`
+        `<button class="${state.draftCategory === option ? "choice-pill is-active" : "choice-pill"}" data-tag="${option}" type="button">${option}</button>`
     )
     .join("");
 
   elements.categoryOptions.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
-      const tag = button.dataset.tag;
-      if (state.selectedTags.includes(tag)) {
-        state.selectedTags = state.selectedTags.filter((item) => item !== tag);
-      } else {
-        state.selectedTags = [...state.selectedTags, tag];
-      }
+      state.draftCategory = button.dataset.tag;
       renderCategoryOptions();
     });
   });
-}
-
-function renderCustomTags() {
-  elements.customTagList.innerHTML = state.customTags.map((tag) => `<span class="hash-tag">#${tag}</span>`).join("");
 }
 
 function renderMemoryList() {
@@ -300,7 +310,8 @@ function renderMemoryList() {
   elements.memoryList.innerHTML = state.filteredMemories
     .map((memory) => {
       const isSelected = memory.id === state.selectedMemoryId;
-      const isExpanded = memory.id === state.expandedMemoryId;
+      const isExpanded = memory.id === state.listExpandedMemoryId;
+      const displayTags = getDisplayTags(memory);
       const thumbClass = memory.imagePath ? "memory-thumb has-image" : `memory-thumb tone-${memory.accent}`;
       const thumbStyle = memory.imagePath ? `style="background-image:url('${memory.imagePath}')"` : "";
 
@@ -317,9 +328,7 @@ function renderMemoryList() {
               </div>
               <h3>${memory.title}</h3>
               <p>${memory.summary}</p>
-              <div class="tag-row compact">
-                ${memory.hashtags.map((tag) => `<span class="hash-tag">${tag}</span>`).join("")}
-              </div>
+              ${displayTags.length ? `<div class="tag-row compact">${displayTags.map((tag) => `<span class="hash-tag">${tag}</span>`).join("")}</div>` : ""}
             </div>
           </button>
           <div class="memory-card-footer">
@@ -345,13 +354,13 @@ function renderMemoryList() {
     const memoryId = card.dataset.memoryId;
     card.querySelector('[data-action="select"]').addEventListener("click", () => {
       state.selectedMemoryId = memoryId;
-      state.expandedMemoryId = null;
+      state.popupExpanded = false;
       renderAll();
       focusSelectedMemoryOnMap();
     });
     card.querySelector('[data-action="expand"]').addEventListener("click", () => {
-      state.expandedMemoryId = state.expandedMemoryId === memoryId ? null : memoryId;
-      renderAll();
+      state.listExpandedMemoryId = state.listExpandedMemoryId === memoryId ? null : memoryId;
+      renderMemoryList();
     });
   });
 }
@@ -363,7 +372,8 @@ function renderPopup() {
     return;
   }
 
-  const isExpanded = state.expandedMemoryId === memory.id;
+  const isExpanded = state.popupExpanded;
+  const displayTags = getDisplayTags(memory);
   elements.popupCard.classList.remove("hidden");
   elements.popupCategory.textContent = memory.category;
   elements.popupPlace.textContent = memory.placeName;
@@ -375,15 +385,14 @@ function renderPopup() {
   elements.popupToggle.textContent = isExpanded ? "收合返回" : "完整內容…";
   elements.popupTags.innerHTML = `
     <span class="category-badge">${memory.category}</span>
-    ${memory.hashtags.map((tag) => `<span class="hash-tag">${tag}</span>`).join("")}
+    ${displayTags.map((tag) => `<span class="hash-tag">${tag}</span>`).join("")}
   `;
 
   elements.popupImage.className = memory.imagePath ? "popup-image has-image" : `popup-image tone-${memory.accent}`;
   elements.popupImage.style.backgroundImage = memory.imagePath ? `url('${memory.imagePath}')` : "";
   elements.popupToggle.onclick = () => {
-    state.expandedMemoryId = isExpanded ? null : memory.id;
+    state.popupExpanded = !isExpanded;
     renderPopup();
-    renderMemoryList();
   };
 }
 
@@ -413,7 +422,7 @@ function renderLayerOptions() {
 
 function filterMemories() {
   state.filteredMemories = state.memories.filter((memory) => {
-    const matchType = state.selectedType === "all" || memory.type === state.selectedType;
+    const matchCategory = state.selectedCategory === "全部" || normalizeCategory(memory.category) === state.selectedCategory;
     const matchVillage = state.selectedVillage === "全部村落" || memory.village === state.selectedVillage;
     const matchEra = state.selectedEra === "全部年代" || memory.decade === state.selectedEra || memory.periodLabel === state.selectedEra;
     const query = state.search.trim().toLowerCase();
@@ -422,12 +431,12 @@ function filterMemories() {
       [memory.title, memory.summary, memory.placeName, memory.sharer, memory.village, memory.category, ...memory.hashtags].some((field) =>
         field.toLowerCase().includes(query)
       );
-    return matchType && matchVillage && matchEra && matchSearch;
+    return matchCategory && matchVillage && matchEra && matchSearch;
   });
 
   if (!state.filteredMemories.find((memory) => memory.id === state.selectedMemoryId)) {
     state.selectedMemoryId = state.filteredMemories[0]?.id || null;
-    state.expandedMemoryId = null;
+    state.popupExpanded = false;
   }
 }
 
@@ -486,7 +495,7 @@ function renderMainMarkers() {
     markerNode.type = "button";
     markerNode.addEventListener("click", () => {
       state.selectedMemoryId = memory.id;
-      state.expandedMemoryId = null;
+      state.popupExpanded = false;
       renderAll();
       focusSelectedMemoryOnMap();
     });
@@ -561,6 +570,8 @@ function applyPickerCoords(center, name) {
   updatePickerMessage(`目前選點：${state.pickerCoords.lat.toFixed(5)}, ${state.pickerCoords.lng.toFixed(5)}`);
   elements.pickerResults.classList.add("hidden");
 }
+
+let pickerSearchDebounceId = null;
 
 function dedupeResults(items) {
   const seen = new Set();
@@ -734,8 +745,8 @@ async function submitMemory(event) {
       longitude: state.pickerCoords.lng,
       period_text: values.periodText,
       sharer_name: values.sharerName,
-      category: state.selectedTags[0] || "生活故事",
-      tags: [...state.selectedTags, ...state.customTags].map((tag) => tag.replace(/^#/, "")),
+      category: state.draftCategory || "生活",
+      tags: [],
       image_url: imageUrl,
       source_label: "民眾投稿",
       status: "pending"
@@ -749,10 +760,8 @@ async function submitMemory(event) {
 
     elements.form.reset();
     elements.uploadLabel.textContent = "上傳照片或舊影像";
-    state.selectedTags = ["生活故事"];
-    state.customTags = [];
+    state.draftCategory = "生活";
     renderCategoryOptions();
-    renderCustomTags();
     setFeedback("投稿成功，這筆內容已進入待審核。你在 Supabase 後台通過後，才會顯示到地圖上。");
   } catch (error) {
     setFeedback(formatSupabaseFailure("送出", error), true);
@@ -798,7 +807,7 @@ function initSupabase() {
 function wireEvents() {
   document.querySelectorAll("#type-chip-group .chip").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedType = button.dataset.type;
+      state.selectedCategory = button.dataset.category;
       document.querySelectorAll("#type-chip-group .chip").forEach((chip) => chip.classList.remove("is-active"));
       button.classList.add("is-active");
       renderAll();
@@ -829,20 +838,17 @@ function wireEvents() {
     elements.composerPanel.classList.add("hidden");
     elements.fabButton.textContent = "＋";
   });
-  elements.addTagButton.addEventListener("click", () => {
-    const nextTag = elements.customTagInput.value.trim().replace(/^#/, "");
-    if (!nextTag || state.customTags.includes(nextTag)) return;
-    state.customTags.push(nextTag);
-    state.selectedTags.push(nextTag);
-    elements.customTagInput.value = "";
-    renderCategoryOptions();
-    renderCustomTags();
-  });
   elements.photoInput.addEventListener("change", () => {
     const file = elements.photoInput.files?.[0];
     elements.uploadLabel.textContent = file ? file.name : "上傳照片或舊影像";
   });
   elements.pickerSearchButton.addEventListener("click", runPickerSearch);
+  elements.pickerSearchInput.addEventListener("input", () => {
+    clearTimeout(pickerSearchDebounceId);
+    pickerSearchDebounceId = setTimeout(() => {
+      runPickerSearch();
+    }, 220);
+  });
   elements.pickerSearchInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -875,12 +881,11 @@ async function init() {
   populateSelect(elements.villageSelect, villageOptions);
   populateSelect(elements.eraSelect, eraOptions);
   renderCategoryOptions();
-  renderCustomTags();
   renderLayerOptions();
   wireEvents();
 
   if (!CONFIG.mapboxToken) {
-    document.querySelector("#main-map").innerHTML = '<div class="empty-state"><strong>還沒設定 Mapbox token</strong><p>先到 app.js 把 CONFIG.mapboxToken 換成你的 token。</p></div>';
+    document.querySelector("#main-map").innerHTML = '<div class="empty-state"><strong>還沒設定 Mapbox token</strong><p>先到 config.js 或 GitHub Secrets 設定 Mapbox token。</p></div>';
     document.querySelector("#picker-map").innerHTML = '<div class="empty-state"><strong>還沒設定 Mapbox token</strong><p>設定後這裡才會出現可選點地圖。</p></div>';
   } else {
     initMainMap();
