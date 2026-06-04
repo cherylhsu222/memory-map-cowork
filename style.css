@@ -390,7 +390,7 @@ button {
 
 .map-stage {
   position: relative;
-  min-height: clamp(340px, 50vh, 430px);
+  min-height: clamp(390px, 56vh, 500px);
   overflow: hidden;
 }
 
@@ -401,14 +401,14 @@ button {
 }
 
 .mapbox-shell {
-  min-height: clamp(340px, 50vh, 430px);
+  min-height: clamp(390px, 56vh, 500px);
 }
 
 .map-popup-card {
   position: absolute;
   left: 20px;
   right: 20px;
-  bottom: 16px;
+  bottom: 12px;
   display: grid;
   grid-template-columns: 180px 1fr;
   gap: 18px;
