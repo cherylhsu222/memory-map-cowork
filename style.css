@@ -453,7 +453,9 @@ button {
 }
 
 .popup-footer {
-  display: none;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
 }
 
 .map-tools {

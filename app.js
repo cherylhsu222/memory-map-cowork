@@ -406,15 +406,16 @@ function renderPopup() {
   }
 
   els.popupCard.classList.remove("hidden");
-  els.popupCard.classList.add("is-expanded");
+  els.popupCard.classList.toggle("is-expanded", state.popupExpanded);
   els.popupImage.style.backgroundImage = `url('${memory.image_url || "./assets/gujumu-lin-guizhen.JPG"}')`;
   els.popupCategory.textContent = memory.category;
   els.popupPlace.textContent = memory.place_name;
   els.popupPeriod.textContent = memory.period_text;
   els.popupTitle.textContent = memory.title;
-  els.popupText.textContent = memory.content;
+  els.popupText.textContent = state.popupExpanded ? memory.content : memory.summary;
   els.popupSharer.textContent = `分享者：${memory.sharer_name}`;
   els.popupSource.textContent = `來源：${memory.source_label}`;
+  els.popupToggle.textContent = state.popupExpanded ? "收合" : "完整內容…";
 
   els.popupTags.innerHTML = "";
   (memory.tags || []).forEach((tag) => {
