@@ -82,9 +82,9 @@ button {
 
 .prototype-shell {
   display: grid;
-  grid-template-columns: 390px minmax(0, 1fr);
-  gap: 20px;
-  min-height: calc(100vh - 145px);
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 18px;
+  min-height: calc(100vh - 150px);
   align-items: stretch;
 }
 
@@ -100,9 +100,9 @@ button {
 .memory-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  min-height: calc(100vh - 145px);
+  gap: 12px;
+  padding: 16px;
+  min-height: calc(100vh - 150px);
 }
 
 .sidebar-head {
@@ -153,7 +153,7 @@ button {
 
 .filter-row {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .chip-group,
@@ -163,7 +163,7 @@ button {
 .picker-search-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chip,
@@ -182,7 +182,7 @@ button {
 .choice-pill,
 .layer-option,
 .memory-expand-button {
-  padding: 10px 14px;
+  padding: 9px 13px;
   background: #efe4d4;
   color: var(--text);
   transition: transform 180ms ease, background 180ms ease, color 180ms ease;
@@ -228,7 +228,7 @@ button {
 .memory-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow: auto;
   min-height: 0;
   flex: 1;
@@ -238,17 +238,17 @@ button {
 .memory-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   border: 1px solid transparent;
-  border-radius: 20px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
 }
 
 .memory-card-main {
   display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 14px;
+  grid-template-columns: 76px 1fr;
+  gap: 12px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -288,11 +288,11 @@ button {
 }
 
 .memory-thumb {
-  min-height: 156px;
+  min-height: 132px;
 }
 
 .popup-image {
-  min-height: 220px;
+  min-height: 170px;
 }
 
 .memory-thumb::after,
@@ -392,7 +392,7 @@ button {
 
 .map-stage {
   position: relative;
-  min-height: calc(100vh - 145px);
+  min-height: calc(100vh - 150px);
   overflow: hidden;
 }
 
@@ -403,19 +403,19 @@ button {
 }
 
 .mapbox-shell {
-  min-height: calc(100vh - 145px);
+  min-height: calc(100vh - 150px);
 }
 
 .map-popup-card {
   position: absolute;
   left: 20px;
   right: 20px;
-  bottom: 18px;
+  bottom: 12px;
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 18px;
-  padding: 16px;
-  border-radius: 28px;
+  grid-template-columns: 150px 1fr;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 24px;
   background: rgba(255, 251, 245, 0.94);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
@@ -424,7 +424,7 @@ button {
 .popup-copy {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .popup-footer {
@@ -525,26 +525,26 @@ button {
 
 .floating-composer {
   position: absolute;
-  right: 24px;
-  bottom: 24px;
+  right: 20px;
+  bottom: 20px;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   justify-items: end;
 }
 
 .composer-panel {
-  width: min(420px, calc(100vw - 80px));
-  max-height: min(78vh, 860px);
+  width: min(400px, calc(100vw - 80px));
+  max-height: min(74vh, 820px);
   overflow: auto;
-  border-radius: 28px;
+  border-radius: 24px;
   background: rgba(255, 251, 245, 0.97);
   box-shadow: var(--shadow);
 }
 
 .submit-panel {
   display: grid;
-  gap: 18px;
-  padding: 22px;
+  gap: 16px;
+  padding: 18px;
 }
 
 .submit-head {
@@ -651,11 +651,11 @@ button {
 }
 
 .fab {
-  width: 68px;
-  height: 68px;
+  width: 62px;
+  height: 62px;
   display: grid;
   place-items: center;
-  font-size: 34px;
+  font-size: 32px;
   box-shadow: var(--shadow);
 }
 
@@ -691,12 +691,16 @@ button {
     min-height: auto;
   }
 
+  .memory-sidebar {
+    min-height: auto;
+  }
+
   .map-stage {
-    min-height: 70vh;
+    min-height: 68vh;
   }
 
   .mapbox-shell {
-    min-height: 70vh;
+    min-height: 68vh;
   }
 }
 
