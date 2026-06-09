@@ -63,6 +63,13 @@
 
           <div class="memory-list" id="memory-list"></div>
 
+          <div class="memory-pagination hidden" id="memory-pagination">
+            <span class="memory-pagination-info" id="memory-pagination-info"></span>
+            <div class="memory-pagination-controls">
+              <button class="memory-page-button" id="page-prev" type="button">上一頁</button>
+              <button class="memory-page-button" id="page-next" type="button">下一頁</button>
+            </div>
+          </div>
         </aside>
 
         <section class="map-stage">
@@ -159,7 +166,7 @@
                   </label>
 
                   <div class="field">
-                    <span>分類與標籤</span>
+                    <span>分類</span>
                     <div class="location-shell" id="category-options"></div>
                   </div>
 
@@ -170,7 +177,7 @@
                       <button class="map-tool-button is-active" id="picker-search-button" type="button">搜尋定位</button>
                       <button class="ghost-button" id="picker-locate-button" type="button">使用目前位置</button>
                     </div>
-                    <div class="picker-caption">可直接搜尋地名、山谷或路徑，自動跳到位置；也可以手動點地圖微調。</div>
+                    <div class="picker-caption">直接輸入地名會跑出候選，點一下就會定位；也可以手動點地圖微調。</div>
                     <div class="picker-results hidden" id="picker-results"></div>
                     <div class="picker-shell" id="picker-shell">
                       <div class="picker-map" id="picker-map"></div>
