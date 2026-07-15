@@ -14,6 +14,7 @@
 - `app.js`
 - `config.example.js`
 - `supabase-review-setup.sql`
+- `supabase-reports-setup.sql`
 - `assets/gujumu-lin-guizhen.JPG`
 - `.github/workflows/deploy-pages.yml`
 
@@ -21,8 +22,9 @@
 
 1. 去 `Supabase SQL Editor`
 2. 執行 `supabase-review-setup.sql`
-3. 不要直接把金鑰寫進 `app.js`
-4. 選一種你要用的方式
+3. 再執行一次 `supabase-reports-setup.sql`（這個是「回報修正」功能要用的資料表，只要跑一次）
+4. 不要直接把金鑰寫進 `app.js`
+5. 選一種你要用的方式
 
 ## 方式 1：本機測試用
 
@@ -92,6 +94,17 @@
    - 不公開：改成 `rejected`
 
 只要你改成 `approved`，這篇就會出現在網站的地圖和文章列表。
+
+### 第二階段：回報修正
+
+族人可以在地圖彈出卡片上點「回報修正」，針對已經存在的一筆記憶提出修正或補充建議（可勾選標題／地點／時間／內容／照片／其他，加一段文字說明）。這些回報會存到另一張表 `memory_reports`，狀態一樣先是 `pending`。
+
+1. 打開 `Supabase Dashboard` → `Table Editor` → `memory_reports`
+2. 看 `memory_title_snapshot` 確認是哪一筆記憶、`fields` 是族人勾的項目、`description` 是說明內容
+3. 覺得合理的話，自己去 `memories` 那張表手動修改對應那一筆的內容
+4. 改完之後，把這筆 `memory_reports` 的 `status` 改成 `approved`（不合理就改 `rejected`）
+
+`memory_reports` 只是「建議」，不會自動覆蓋 `memories` 裡的資料，一定要你自己確認後手動修改，避免錯誤的回報直接上線。
 
 ## 你之後可以改的地方
 
