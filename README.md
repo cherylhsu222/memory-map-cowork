@@ -17,6 +17,7 @@
 - `supabase-reports-setup.sql`
 - `assets/gujumu-lin-guizhen.JPG`
 - `.github/workflows/deploy-pages.yml`
+- `supabase/functions/upload-to-github/index.ts`（照片上傳用的 Edge Function，見下面「照片改存到 GitHub」）
 
 ## 你要先做的事
 
@@ -80,6 +81,41 @@
 7. 讓 `Deploy GitHub Pages` 跑完
 
 幾分鐘後就會有網址。
+
+## 照片改存到 GitHub（省 Supabase 儲存空間）
+
+族人上傳照片時，現在不是存進 Supabase Storage，而是透過一支 Supabase Edge Function，把照片直接 commit 進這個 GitHub repo 的 `assets/submissions/` 資料夾。GitHub 的金鑰只存在 Supabase 後台的 secret 裡，不會出現在網頁程式碼裡，比較安全。
+
+你要做的設定（只要做一次）：
+
+### 1. 去 GitHub 建一組「只能寫這個 repo」的權限金鑰
+
+1. 打開 https://github.com/settings/personal-access-tokens/new
+2. `Token name` 隨便取，例如 `nanao-memory-map-upload`
+3. `Expiration` 建議選 90 天或 1 年（到期要記得換新的）
+4. `Repository access` 選 `Only select repositories`，選 `memory-map-cowork` 這個 repo，**不要選全部 repo**
+5. `Permissions` → `Repository permissions` → 找到 `Contents`，改成 `Read and write`，其他都維持 `No access`
+6. 點 `Generate token`，複製那串 `github_pat_` 開頭的金鑰（只會顯示一次，先貼到記事本存好）
+
+### 2. 去 Supabase 建立 Edge Function
+
+1. 打開 Supabase Dashboard → 左側選單 `Edge Functions`
+2. 點 `Deploy a new function` → 選 `Via Editor`（不用裝任何工具）
+3. Function 名稱填 `upload-to-github`
+4. 把 `supabase/functions/upload-to-github/index.ts` 這個檔案的內容整份貼進去
+5. 點 `Deploy function`
+
+### 3. 把金鑰存成 Supabase 的 Secret
+
+1. 同樣在 `Edge Functions` 頁面，找 `Secrets`（或 `Manage secrets`）
+2. 新增一個 secret：
+   - Name：`GITHUB_TOKEN`
+   - Value：貼上第 1 步拿到的那串 `github_pat_...`
+3. 存檔
+
+設定完，之後族人在網站上傳的照片就會自動出現在 GitHub 的 `assets/submissions/` 資料夾裡，`memories` 表裡的 `image_url` 也會自動指向 GitHub 上的圖片網址，不會再佔用 Supabase Storage 的空間。
+
+如果沒有做這個設定，上傳照片時會顯示錯誤訊息，提醒你去 Supabase 後台補 `GITHUB_TOKEN`。
 
 ## 你怎麼審核投稿
 

@@ -819,6 +819,26 @@ function setFeedback(message, isError = false) {
   els.submitFeedback.style.color = isError ? "#9c4b2d" : "var(--green-deep)";
 }
 
+async function uploadImageToGithub(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${CONFIG.supabaseUrl}/functions/v1/upload-to-github`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${CONFIG.supabasePublishableKey}`,
+      apikey: CONFIG.supabasePublishableKey
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "圖片上傳失敗");
+  }
+  return result.url;
+}
+
 async function submitMemory(event) {
   event.preventDefault();
 
@@ -844,14 +864,12 @@ async function submitMemory(event) {
   try {
     let imageUrl = "";
     if (file) {
-      const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-      const { error: uploadError } = await supabase.storage.from("memory-images").upload(safeName, file, { upsert: false });
-      if (uploadError) {
+      try {
+        imageUrl = await uploadImageToGithub(file);
+      } catch (uploadError) {
         setFeedback(`圖片上傳失敗：${uploadError.message}`, true);
         return;
       }
-      const { data: publicUrlData } = supabase.storage.from("memory-images").getPublicUrl(safeName);
-      imageUrl = publicUrlData.publicUrl;
     }
 
     const { error: insertError } = await supabase.from("memories").insert({
