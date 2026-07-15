@@ -9,7 +9,7 @@ const GITHUB_OWNER = "cherylhsu222";
 const GITHUB_REPO = "memory-map-cowork";
 const GITHUB_BRANCH = "main";
 const UPLOAD_DIR = "assets/submissions";
-const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
 
 const CORS_HEADERS = {
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return jsonResponse({ error: "照片太大了，請壓縮到 8MB 以內再試一次" }, 400);
+      return jsonResponse({ error: "照片太大了，請壓縮到 50MB 以內再試一次" }, 400);
     }
 
     const originalExtMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
