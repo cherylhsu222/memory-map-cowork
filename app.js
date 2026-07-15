@@ -819,33 +819,68 @@ function setFeedback(message, isError = false) {
   els.submitFeedback.style.color = isError ? "#9c4b2d" : "var(--green-deep)";
 }
 
-async function compressImageForUpload(file, maxDimension = 2000, quality = 0.82) {
-  if (!file.type.startsWith("image/") || file.type === "image/gif") {
+const SAFE_UPLOAD_SIZE = 3.5 * 1024 * 1024; // 留一點餘裕，低於伺服器端的 4MB 上限
+const COMPRESSION_STEPS = [
+  { maxDimension: 2000, quality: 0.82 },
+  { maxDimension: 1600, quality: 0.7 },
+  { maxDimension: 1200, quality: 0.6 },
+  { maxDimension: 900, quality: 0.5 }
+];
+
+async function compressOnce(bitmap, name, maxDimension, quality) {
+  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bitmap, 0, 0, width, height);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  if (!blob) return null;
+
+  const compressedName = name.replace(/\.[^.]+$/, "") + ".jpg";
+  return new File([blob], compressedName, { type: "image/jpeg" });
+}
+
+async function compressImageForUpload(file) {
+  if (file.type === "image/gif") {
+    return file;
+  }
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch (error) {
+    console.error("這張照片沒辦法在瀏覽器解析、跳過壓縮，直接送出原始檔案", error);
     return file;
   }
 
   try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-    const width = Math.round(bitmap.width * scale);
-    const height = Math.round(bitmap.height * scale);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
-
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-    if (!blob) return file;
-
-    const compressedName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
-    return new File([blob], compressedName, { type: "image/jpeg" });
+    let best = file;
+    for (const step of COMPRESSION_STEPS) {
+      const compressed = await compressOnce(bitmap, file.name, step.maxDimension, step.quality);
+      if (!compressed) continue;
+      best = compressed;
+      if (compressed.size <= SAFE_UPLOAD_SIZE) break;
+    }
+    return best;
   } catch (error) {
     console.error("圖片壓縮失敗，改用原始檔案", error);
     return file;
+  } finally {
+    bitmap.close();
   }
+}
+
+async function uploadImageToSupabaseStorage(file) {
+  const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+  const { error: uploadError } = await supabase.storage.from("memory-images").upload(safeName, file, { upsert: false });
+  if (uploadError) throw uploadError;
+  const { data: publicUrlData } = supabase.storage.from("memory-images").getPublicUrl(safeName);
+  return publicUrlData.publicUrl;
 }
 
 async function uploadImageToGithub(file) {
@@ -865,6 +900,11 @@ async function uploadImageToGithub(file) {
 
   const result = await response.json();
   if (!response.ok) {
+    // 壓縮完還是太大（極少見），改存 Supabase Storage 當備援，不要讓投稿直接失敗
+    if (response.status === 400 && (result.error || "").includes("太大")) {
+      console.warn("照片壓縮後仍超過大小限制，改存 Supabase Storage 當備援");
+      return uploadImageToSupabaseStorage(uploadFile);
+    }
     throw new Error(result.error || "圖片上傳失敗");
   }
   return result.url;
