@@ -20,13 +20,6 @@ const reportFieldOptions = ["標題", "地點", "時間", "內容", "照片", "�
 const historyLayerOptions = [
   { id: "none", label: "僅現代底圖", title: "Mapbox 現代底圖", tiles: null, source: "Mapbox" },
   {
-    id: "jm20k1904",
-    label: "1904 堡圖",
-    title: "1904-日治臺灣堡圖(明治版)-1:20,000",
-    tiles: ["https://gis.sinica.edu.tw/tileserver/file-exists.php?img=JM20K_1904-jpg-{z}-{x}-{y}"],
-    source: "中央研究院 台灣百年歷史地圖 WMTS"
-  },
-  {
     id: "yilan1911",
     label: "1911 宜蘭廳管內圖",
     title: "宜蘭廳管內圖(1911)",
@@ -41,45 +34,10 @@ const historyLayerOptions = [
     source: "中央研究院 宜蘭百年歷史地圖 WMTS"
   },
   {
-    id: "jm50k1920",
-    label: "1920 地形圖",
-    title: "1920-日治五萬分一地形圖(總督府土木局)-1:50,000",
-    tiles: ["https://gis.sinica.edu.tw/tileserver/file-exists.php?img=JM50K_1920-png-{z}-{x}-{y}"],
-    source: "中央研究院 台灣百年歷史地圖 WMTS"
-  },
-  {
     id: "yilan1920",
     label: "1920 宜蘭廳管內圖",
     title: "宜蘭廳管內圖(1920)",
     tiles: ["https://gis.sinica.edu.tw/yilan/file-exists.php?img=Yilan_1920-png-{z}-{x}-{y}"],
-    source: "中央研究院 宜蘭百年歷史地圖 WMTS"
-  },
-  {
-    id: "jm25k1921",
-    label: "1921 二萬五地形圖",
-    title: "1921-日治二萬五千分之一地形圖-1:25,000",
-    tiles: ["https://gis.sinica.edu.tw/tileserver/file-exists.php?img=JM25K_1921-png-{z}-{x}-{y}"],
-    source: "中央研究院 台灣百年歷史地圖 WMTS"
-  },
-  {
-    id: "jm25k1944",
-    label: "1944 地形圖",
-    title: "1944-日治地形圖(航照修正版)-1:25,000",
-    tiles: ["https://gis.sinica.edu.tw/tileserver/file-exists.php?img=JM25K_1944-png-{z}-{x}-{y}"],
-    source: "中央研究院 台灣百年歷史地圖 WMTS"
-  },
-  {
-    id: "tm25k1950",
-    label: "1950 臺灣地形圖",
-    title: "1950-臺灣地形圖-1:25,000",
-    tiles: ["https://gis.sinica.edu.tw/tileserver/file-exists.php?img=TM25K_1950-png-{z}-{x}-{y}"],
-    source: "中央研究院 台灣百年歷史地圖 WMTS"
-  },
-  {
-    id: "yilan1971",
-    label: "1971 灌溉區域圖",
-    title: "宜蘭農田水利會灌區外灌溉地位置圖(1971)",
-    tiles: ["https://gis.sinica.edu.tw/yilan/file-exists.php?img=Yilan_50K_1971-png-{z}-{x}-{y}"],
     source: "中央研究院 宜蘭百年歷史地圖 WMTS"
   },
   {
