@@ -819,9 +819,40 @@ function setFeedback(message, isError = false) {
   els.submitFeedback.style.color = isError ? "#9c4b2d" : "var(--green-deep)";
 }
 
+async function compressImageForUpload(file, maxDimension = 2000, quality = 0.82) {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") {
+    return file;
+  }
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    if (!blob) return file;
+
+    const compressedName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], compressedName, { type: "image/jpeg" });
+  } catch (error) {
+    console.error("圖片壓縮失敗，改用原始檔案", error);
+    return file;
+  }
+}
+
 async function uploadImageToGithub(file) {
+  const uploadFile = await compressImageForUpload(file);
+
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", uploadFile);
 
   const response = await fetch(`${CONFIG.supabaseUrl}/functions/v1/upload-to-github`, {
     method: "POST",

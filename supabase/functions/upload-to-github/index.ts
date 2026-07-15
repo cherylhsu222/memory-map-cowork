@@ -9,7 +9,12 @@ const GITHUB_OWNER = "cherylhsu222";
 const GITHUB_REPO = "memory-map-cowork";
 const GITHUB_BRANCH = "main";
 const UPLOAD_DIR = "assets/submissions";
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+// 這支 function 執行時記憶體只有 256MB，轉檔（base64 編碼 + 組成要送給
+// GitHub 的資料）會讓記憶體用量膨脹到檔案大小的 3 倍以上。實測 5MB 的檔案
+// 可以正常處理，6MB 以上就會讓 function 當機（WORKER_RESOURCE_LIMIT），
+// 所以這裡設一個有安全餘裕的保守值。前端已經會先把照片壓縮到遠低於這個
+// 大小，這裡只是最後一道防線。
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
 
 const CORS_HEADERS = {
@@ -64,7 +69,7 @@ Deno.serve(async (req) => {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return jsonResponse({ error: "照片太大了，請壓縮到 50MB 以內再試一次" }, 400);
+      return jsonResponse({ error: "照片太大了，請壓縮到 4MB 以內再試一次" }, 400);
     }
 
     const originalExtMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
