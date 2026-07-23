@@ -92,8 +92,8 @@
                 <span id="popup-source"></span>
               </div>
               <div class="popup-footer">
-                <button class="ghost-button" id="popup-report" type="button">回報修正</button>
-                <button id="popup-toggle" type="button">完整內容…</button>
+                <button class="ghost-button" id="popup-report" type="button">我要補充</button>
+                <button id="popup-toggle" type="button">完整內容</button>
               </div>
             </div>
           </article>
@@ -147,8 +147,8 @@
                   </label>
 
                   <label class="field">
-                    <span>地點</span>
-                    <input id="place-input" placeholder="例如：武塔村附近、南澳街上" type="text" />
+                    <span>地點（選填）</span>
+                    <input id="place-input" placeholder="例如：武塔村附近、南澳街上；沒有明確地點可以留空" type="text" />
                   </label>
 
                   <label class="field">
@@ -172,13 +172,13 @@
                   </div>
 
                   <div class="field">
-                    <span>地點設定</span>
+                    <span>地點設定（選填）</span>
                     <div class="picker-search-row">
                       <input id="picker-search-input" placeholder="輸入地名、山谷、路徑或機關名稱" type="text" />
                       <button class="map-tool-button is-active" id="picker-search-button" type="button">搜尋定位</button>
                       <button class="ghost-button" id="picker-locate-button" type="button">使用目前位置</button>
                     </div>
-                    <div class="picker-caption">直接輸入地名會跑出候選，點一下就會定位；也可以手動點地圖微調。</div>
+                    <div class="picker-caption">直接輸入地名會跑出候選，點一下就會定位；也可以手動點地圖微調。沒有明確地點的話，上面「地點」欄位留空即可，這則故事不會在地圖上顯示圖標。</div>
                     <div class="picker-results hidden" id="picker-results"></div>
                     <div class="picker-shell" id="picker-shell">
                       <div class="picker-map" id="picker-map"></div>
@@ -202,7 +202,7 @@
         <article class="report-panel">
           <div class="submit-head">
             <div>
-              <p class="section-label">回報修正</p>
+              <p class="section-label">我要補充</p>
               <h2 id="report-target-title"></h2>
             </div>
             <button class="ghost-button" id="close-report" type="button">關閉</button>
@@ -230,7 +230,7 @@
 
             <div class="submit-feedback hidden" id="report-feedback"></div>
 
-            <button class="primary-submit" id="report-submit-button" type="submit">送出回報</button>
+            <button class="primary-submit" id="report-submit-button" type="submit">送出補充</button>
           </form>
         </article>
       </div>

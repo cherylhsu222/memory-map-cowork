@@ -425,6 +425,7 @@ button {
   min-height: 205px;
   max-height: 34%;
   align-items: start;
+  overflow: hidden;
   z-index: 2;
 }
 
@@ -438,6 +439,7 @@ button {
   gap: 8px;
   min-width: 0;
   overflow: hidden;
+  padding-bottom: 46px;
 }
 
 #popup-text {
@@ -454,10 +456,13 @@ button {
 }
 
 .popup-footer {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: auto;
+  z-index: 1;
 }
 
 .map-tools {

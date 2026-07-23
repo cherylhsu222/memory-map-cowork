@@ -236,9 +236,9 @@ function normalizeMemory(row) {
     id: row.id,
     title: row.title || "未命名記憶",
     content: row.content || "",
-    place_name: row.place_name || "未標示地點",
-    latitude: Number(row.latitude) || defaultCenter[1],
-    longitude: Number(row.longitude) || defaultCenter[0],
+    place_name: row.place_name || "",
+    latitude: row.latitude === null || row.latitude === undefined ? null : Number(row.latitude),
+    longitude: row.longitude === null || row.longitude === undefined ? null : Number(row.longitude),
     period_text: row.period_text || "未標示年代",
     sharer_name: row.sharer_name || "未具名",
     category: normalizeCategory(row.category || "其他"),
@@ -344,7 +344,7 @@ function openReportModal(memory) {
   if (!memory) return;
   state.reportTargetMemory = memory;
   state.reportFields = [];
-  els.reportTargetTitle.textContent = `你正在回報：《${memory.title}》`;
+  els.reportTargetTitle.textContent = `你正在補充：《${memory.title}》`;
   els.reportForm.reset();
   clearReportFeedback();
   renderReportFieldOptions();
@@ -385,16 +385,16 @@ async function submitReport(event) {
     });
 
     if (error) {
-      setReportFeedback(`回報送出失敗：${error.message}`, true);
+      setReportFeedback(`補充送出失敗：${error.message}`, true);
       return;
     }
 
-    setReportFeedback("回報成功送出，感謝你的補充，審核通過後會更新到記憶庫。");
+    setReportFeedback("已成功送出，感謝你的補充，審核通過後會更新到記憶庫。");
     window.setTimeout(() => {
       closeReportModal();
     }, 1600);
   } catch (error) {
-    setReportFeedback(`回報送出失敗：${error.message}`, true);
+    setReportFeedback(`補充送出失敗：${error.message}`, true);
   }
 }
 
@@ -509,13 +509,13 @@ function renderPopup() {
   els.popupCard.classList.toggle("is-expanded", state.popupExpanded);
   els.popupImage.style.backgroundImage = `url('${memory.image_url || "./assets/gujumu-lin-guizhen.JPG"}')`;
   els.popupCategory.textContent = memory.category;
-  els.popupPlace.textContent = memory.place_name;
+  els.popupPlace.textContent = memory.place_name || "未標示地點";
   els.popupPeriod.textContent = memory.period_text;
   els.popupTitle.textContent = memory.title;
   els.popupText.textContent = state.popupExpanded ? memory.content : memory.summary;
   els.popupSharer.textContent = `分享者：${memory.sharer_name}`;
   els.popupSource.textContent = `來源：${memory.source_label}`;
-  els.popupToggle.textContent = state.popupExpanded ? "收合" : "完整內容…";
+  els.popupToggle.textContent = state.popupExpanded ? "收合" : "完整內容";
 
   els.popupTags.innerHTML = "";
   (memory.tags || []).forEach((tag) => {
@@ -568,6 +568,7 @@ function renderMarkers() {
   markers.clear();
 
   state.filteredMemories.forEach((memory) => {
+    if (memory.latitude == null || memory.longitude == null) return;
     const marker = buildMarker(memory).addTo(mainMap);
     if (memory.id === state.selectedId) {
       marker.getElement().classList.add("is-active");
@@ -577,7 +578,7 @@ function renderMarkers() {
 }
 
 function focusMemory(memory) {
-  if (!mainMap || !memory) return;
+  if (!mainMap || !memory || memory.latitude == null || memory.longitude == null) return;
   mainMap.easeTo({ center: [memory.longitude, memory.latitude], zoom: 11.8, duration: 900 });
 }
 
@@ -690,7 +691,7 @@ function initPickerMap() {
   });
 
   pickerMap.on("load", () => {
-    setPickerPoint({ lng: defaultCenter[0], lat: defaultCenter[1] }, "南澳鄉");
+    setPickerPoint({ lng: defaultCenter[0], lat: defaultCenter[1] }, "");
   });
 
   pickerMap.on("click", (event) => setPickerPoint(event.lngLat, els.placeInput.value.trim()));
@@ -925,10 +926,12 @@ async function submitMemory(event) {
   const sharerName = els.sharerInput.value.trim();
   const file = els.photoInput.files?.[0] || null;
 
-  if (!title || !placeName || !periodText || !content || !sharerName) {
-    setFeedback("請先把標題、地點、時間、故事內容和分享者都填好。", true);
+  if (!title || !periodText || !content || !sharerName) {
+    setFeedback("請先把標題、時間、故事內容和分享者都填好。", true);
     return;
   }
+
+  const hasLocation = Boolean(placeName);
 
   setFeedback("送出中…");
 
@@ -946,9 +949,9 @@ async function submitMemory(event) {
     const { error: insertError } = await supabase.from("memories").insert({
       title,
       content,
-      place_name: placeName,
-      latitude: Number(state.pickerLngLat[1].toFixed(6)),
-      longitude: Number(state.pickerLngLat[0].toFixed(6)),
+      place_name: hasLocation ? placeName : null,
+      latitude: hasLocation ? Number(state.pickerLngLat[1].toFixed(6)) : null,
+      longitude: hasLocation ? Number(state.pickerLngLat[0].toFixed(6)) : null,
       period_text: periodText,
       sharer_name: sharerName,
       category: state.formCategory,
