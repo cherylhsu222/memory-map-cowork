@@ -18,6 +18,11 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <div class="page-toolbar">
+      <button class="map-tool-button" id="text-scale-toggle" type="button" title="放大介面文字（點擊切換大小）">Aa</button>
+      <button class="map-tool-button" id="help-toggle" type="button" title="重新看一次操作導覽">？</button>
+    </div>
+
     <main class="page-shell">
       <section class="hero-copy">
         <div>
@@ -197,6 +202,18 @@
           </div>
         </section>
       </section>
+
+      <div class="tour-overlay hidden" id="tour-overlay">
+        <div class="tour-spotlight" id="tour-spotlight"></div>
+        <div class="tour-tooltip" id="tour-tooltip">
+          <div class="tour-step-count" id="tour-step-count"></div>
+          <p id="tour-text"></p>
+          <div class="tour-tooltip-footer">
+            <button class="ghost-button" id="tour-skip" type="button">跳過</button>
+            <button class="primary-submit" id="tour-next" type="button">下一步 →</button>
+          </div>
+        </div>
+      </div>
 
       <div class="modal-overlay hidden" id="report-overlay">
         <article class="report-panel">

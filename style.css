@@ -14,6 +14,8 @@
   --radius-md: 16px;
   --font-serif: "Noto Serif TC", "PingFang TC", "Microsoft JhengHei", serif;
   --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  /* Aa 按鈕控制的介面文字縮放倍率，預設 1（原大小） */
+  --ui-text-scale: 1;
 }
 
 * {
@@ -65,7 +67,7 @@ button {
 .section-label {
   margin: 0 0 8px;
   color: var(--green);
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-text-scale, 1));
   font-weight: 700;
   letter-spacing: 0.09em;
 }
@@ -120,13 +122,13 @@ button {
 
 .sidebar-head p {
   font-family: var(--font-serif);
-  font-size: 22px;
+  font-size: calc(22px * var(--ui-text-scale, 1));
   font-weight: 700;
 }
 
 .sidebar-head span {
   color: var(--muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-text-scale, 1));
   line-height: 1.5;
 }
 
@@ -293,7 +295,7 @@ button {
   border-radius: 999px;
   background: rgba(255, 248, 239, 0.92);
   color: var(--text);
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-text-scale, 1));
   font-weight: 700;
 }
 
@@ -311,8 +313,16 @@ button {
   font-family: var(--font-serif);
 }
 
+.popup-copy h2 {
+  font-size: calc(22px * var(--ui-text-scale, 1));
+}
+
+.submit-head h2 {
+  font-size: calc(20px * var(--ui-text-scale, 1));
+}
+
 .memory-card-copy h3 {
-  font-size: 18px;
+  font-size: calc(18px * var(--ui-text-scale, 1));
   line-height: 1.28;
 }
 
@@ -323,7 +333,7 @@ button {
   flex-wrap: wrap;
   gap: 10px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-text-scale, 1));
 }
 
 .memory-card-summary,
@@ -335,6 +345,7 @@ button {
 .submit-title span,
 .submit-feedback {
   margin: 0;
+  font-size: calc(14px * var(--ui-text-scale, 1));
   color: var(--muted);
   line-height: 1.72;
 }
@@ -354,7 +365,7 @@ button {
   border-radius: 999px;
   background: rgba(239, 228, 212, 0.72);
   color: #8e5d44;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-text-scale, 1));
   font-weight: 700;
 }
 
@@ -373,7 +384,7 @@ button {
 
 .memory-pagination-info {
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-text-scale, 1));
 }
 
 .memory-page-button:disabled {
@@ -475,6 +486,17 @@ button {
   z-index: 3;
 }
 
+/* 放大文字／使用說明——固定在整個頁面右上角，跟地圖本身無關，
+   捲動頁面也不會不見 */
+.page-toolbar {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 30;
+}
+
 .map-tool-button {
   padding: 12px 18px;
   background: rgba(255, 251, 245, 0.9);
@@ -547,7 +569,7 @@ button {
 }
 
 .layer-option-copy span {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-text-scale, 1));
   line-height: 1.6;
 }
 
@@ -594,7 +616,7 @@ button {
 }
 
 .field span {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-text-scale, 1));
   font-weight: 700;
 }
 
@@ -618,7 +640,7 @@ button {
   place-items: center;
   background: var(--green-soft);
   color: var(--green);
-  font-size: 22px;
+  font-size: calc(22px * var(--ui-text-scale, 1));
   font-weight: 700;
 }
 
@@ -657,7 +679,7 @@ button {
 
 .picker-result span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-text-scale, 1));
   line-height: 1.6;
 }
 
@@ -678,7 +700,7 @@ button {
   height: 68px;
   display: grid;
   place-items: center;
-  font-size: 34px;
+  font-size: calc(34px * var(--ui-text-scale, 1));
   box-shadow: var(--shadow);
 }
 
@@ -747,7 +769,7 @@ button {
   }
 
   .hero-copy h1 {
-    font-size: 46px;
+    font-size: calc(46px * var(--ui-text-scale, 1));
   }
 
   .prototype-shell {
@@ -821,4 +843,170 @@ button {
   padding: 22px;
   display: grid;
   gap: 18px;
+}
+
+/* ─── 地圖標記 hover 標題預覽 ─────────────────────── */
+/* 不要在這裡覆寫 .mapbox-memory-marker 的 position！
+   Mapbox 官方樣式表（mapbox-gl.css）本身就把 .mapboxgl-marker 設成
+   position: absolute，靠這個才能把標記精準放到座標算出來的螢幕位置。
+   之前這裡誤加了 position: relative，剛好在載入順序上蓋掉 Mapbox 的設定
+   （選擇器優先權打平時，後載入的 style.css 會贏），
+   導致所有標記的定位機制失效、越飄越遠。
+   其實不需要另外設 position，absolute 本身就足夠當作下面 .marker-label
+   （position: absolute）的定位基準了。 */
+
+.marker-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translate(-50%, 4px);
+  white-space: nowrap;
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: calc(13px * var(--ui-text-scale, 1));
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 5;
+}
+
+.mapbox-memory-marker:hover .marker-label,
+.mapbox-memory-marker:focus-visible .marker-label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ─── 同一地點多則故事：數字徽章 + 選單 ───────────── */
+.marker-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: calc(10px * var(--ui-text-scale, 1));
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+
+.marker-picker {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--panel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 6;
+}
+
+.marker-picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.marker-picker-item:hover {
+  background: var(--green-soft);
+}
+
+.marker-picker-title {
+  font-family: var(--font-sans);
+  font-size: calc(13px * var(--ui-text-scale, 1));
+  font-weight: 700;
+  color: var(--text);
+  white-space: normal;
+}
+
+.marker-picker-category {
+  font-family: var(--font-sans);
+  font-size: calc(11px * var(--ui-text-scale, 1));
+  color: var(--muted);
+}
+
+/* ─── 首次進站操作導覽 ───────────────────────────── */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.tour-spotlight {
+  position: fixed;
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(31, 26, 20, 0.55);
+  border: 2px solid var(--accent);
+  transition: left 0.35s ease, top 0.35s ease, width 0.35s ease, height 0.35s ease, opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.tour-spotlight.is-hidden {
+  opacity: 0;
+}
+
+.tour-tooltip {
+  position: fixed;
+  width: min(320px, calc(100vw - 32px));
+  background: rgba(255, 251, 245, 0.98);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  transition: left 0.35s ease, top 0.35s ease;
+}
+
+.tour-step-count {
+  font-family: var(--font-sans);
+  font-size: calc(12px * var(--ui-text-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.tour-tooltip p {
+  margin: 0 0 16px;
+  font-family: var(--font-serif);
+  font-size: calc(15px * var(--ui-text-scale, 1));
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.tour-tooltip-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tour-tooltip-footer .primary-submit {
+  width: auto;
+  padding: 8px 18px;
 }

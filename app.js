@@ -157,6 +157,15 @@ const els = {
   popupSource: document.getElementById("popup-source"),
   popupToggle: document.getElementById("popup-toggle"),
   popupReport: document.getElementById("popup-report"),
+  tourOverlay: document.getElementById("tour-overlay"),
+  tourSpotlight: document.getElementById("tour-spotlight"),
+  tourTooltip: document.getElementById("tour-tooltip"),
+  tourStepCount: document.getElementById("tour-step-count"),
+  tourText: document.getElementById("tour-text"),
+  tourSkip: document.getElementById("tour-skip"),
+  tourNext: document.getElementById("tour-next"),
+  textScaleToggle: document.getElementById("text-scale-toggle"),
+  helpToggle: document.getElementById("help-toggle"),
   reportOverlay: document.getElementById("report-overlay"),
   reportTargetTitle: document.getElementById("report-target-title"),
   closeReport: document.getElementById("close-report"),
@@ -421,12 +430,9 @@ function applyFilters() {
   state.currentPage = Math.min(state.currentPage, totalPages);
   if (state.currentPage < 1) state.currentPage = 1;
 
-  if (!currentSelectedMemory() && state.filteredMemories.length) {
-    state.selectedId = state.filteredMemories[0].id;
-    state.popupExpanded = false;
-  }
-
-  if (!state.filteredMemories.length) {
+  // 不自動選第一筆——篩選後如果原本選中的項目不在結果裡了，就直接關閉卡片，
+  // 不要跳去選別的，避免使用者還沒點任何東西就被丟一張故事卡在畫面上。
+  if (state.selectedId && !currentSelectedMemory()) {
     state.selectedId = null;
     state.popupExpanded = false;
   }
@@ -512,9 +518,21 @@ function renderPopup() {
   els.popupPlace.textContent = memory.place_name || "未標示地點";
   els.popupPeriod.textContent = memory.period_text;
   els.popupTitle.textContent = memory.title;
-  els.popupText.textContent = state.popupExpanded ? memory.content : memory.summary;
+  // 一律放完整內容，不再用固定字數（之前是 34 字）先截斷字串——那樣常常會
+  // 在句子講到一半、字數剛好卡到的地方硬生生斷掉，很奇怪。改成永遠塞完整
+  // 文字進去，收合狀態交給 CSS 的 line-clamp 視覺上截斷，瀏覽器會在「畫面
+  // 上真正換行的地方」自動補上刪節號，不會斷在不自然的位置。
+  els.popupText.textContent = memory.content;
+
+  // 「完整內容」按鈕只在真的有被夾住看不完時才需要——不用猜字數，
+  // 直接量測收合狀態下有沒有真的溢出（scrollHeight > clientHeight）。
+  els.popupCard.classList.remove("is-expanded");
+  const isTruncated = els.popupText.scrollHeight > els.popupText.clientHeight + 1;
+  els.popupCard.classList.toggle("is-expanded", state.popupExpanded);
+
   els.popupSharer.textContent = `分享者：${memory.sharer_name}`;
   els.popupSource.textContent = `來源：${memory.source_label}`;
+  els.popupToggle.classList.toggle("hidden", !isTruncated);
   els.popupToggle.textContent = state.popupExpanded ? "收合" : "完整內容";
 
   els.popupTags.innerHTML = "";
@@ -546,19 +564,97 @@ function renderAll() {
   renderMarkers();
 }
 
-function buildMarker(memory) {
+// 同一個地點常常會有不只一則記憶（例如同一棵老樹、同一間廟，好幾個人都投稿過）。
+// 座標取到小數點後 4 位（約 11 公尺內）當作「同一個地點」，避免每筆記憶都各自
+// 畫一個標記、疊在一起變成只有最上面那個點得到。
+function locationKey(memory) {
+  return `${memory.latitude.toFixed(4)},${memory.longitude.toFixed(4)}`;
+}
+
+function groupMemoriesByLocation(memories) {
+  const groups = new Map();
+  memories.forEach((memory) => {
+    if (memory.latitude == null || memory.longitude == null) return;
+    const key = locationKey(memory);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(memory);
+  });
+  return groups;
+}
+
+// 目前展開中的「多故事選單」是哪一個地點——純 UI 狀態，跟篩選/選中記憶無關，
+// 所以不放進 state，只在切換主題／篩選時自然清空（renderMarkers 每次都重畫）。
+let openPickerKey = null;
+
+function selectMemory(memory) {
+  // 再點一次同一個已經開著的標記，卡片收起來、回到只有地圖的畫面，
+  // 而不是重複開同一張卡。
+  state.selectedId = state.selectedId === memory.id ? null : memory.id;
+  state.popupExpanded = false;
+  openPickerKey = null;
+  renderAll();
+}
+
+function togglePicker(key) {
+  openPickerKey = openPickerKey === key ? null : key;
+  renderMarkers();
+}
+
+function buildMarker(key, group) {
   const element = document.createElement("button");
   element.type = "button";
   element.className = "mapbox-memory-marker";
-  element.addEventListener("click", () => {
-    state.selectedId = memory.id;
-    state.popupExpanded = false;
-    renderAll();
-    focusMemory(memory);
-  });
+  // 點地圖上的標記只開卡片，地圖本身不重新置中——使用者已經知道位置在哪（自己點的），
+  // 重新置中反而會讓標記在畫面上跳動，變得不知道剛剛點的是哪一個。
+  // （從左側列表點選記憶時，地圖才需要飛過去，見 renderLeftList 裡的 focusMemory 呼叫）
+
+  if (group.length === 1) {
+    const memory = group[0];
+    element.addEventListener("click", () => selectMemory(memory));
+
+    const label = document.createElement("span");
+    label.className = "marker-label";
+    label.textContent = memory.title;
+    element.appendChild(label);
+  } else {
+    element.classList.add("has-multiple");
+    element.addEventListener("click", () => togglePicker(key));
+
+    const badge = document.createElement("span");
+    badge.className = "marker-badge";
+    badge.textContent = String(group.length);
+    element.appendChild(badge);
+
+    const label = document.createElement("span");
+    label.className = "marker-label";
+    label.textContent = `這裡有 ${group.length} 則故事`;
+    element.appendChild(label);
+
+    if (openPickerKey === key) {
+      const picker = document.createElement("div");
+      picker.className = "marker-picker";
+      group.forEach((memory) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "marker-picker-item";
+        item.innerHTML = `
+          <span class="marker-picker-title">${memory.title}</span>
+          <span class="marker-picker-category">${memory.category}</span>
+        `;
+        // 一定要擋掉冒泡，不然點清單裡的項目也會被外層標記的 click 聽到，
+        // 選好故事的同時又把清單重新切換開，變成怪怪的閃一下又開。
+        item.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectMemory(memory);
+        });
+        picker.appendChild(item);
+      });
+      element.appendChild(picker);
+    }
+  }
 
   return new mapboxgl.Marker({ element })
-    .setLngLat([memory.longitude, memory.latitude]);
+    .setLngLat([group[0].longitude, group[0].latitude]);
 }
 
 function renderMarkers() {
@@ -567,13 +663,12 @@ function renderMarkers() {
   markers.forEach((marker) => marker.remove());
   markers.clear();
 
-  state.filteredMemories.forEach((memory) => {
-    if (memory.latitude == null || memory.longitude == null) return;
-    const marker = buildMarker(memory).addTo(mainMap);
-    if (memory.id === state.selectedId) {
-      marker.getElement().classList.add("is-active");
-    }
-    markers.set(memory.id, marker);
+  const groups = groupMemoriesByLocation(state.filteredMemories);
+  groups.forEach((group, key) => {
+    const marker = buildMarker(key, group).addTo(mainMap);
+    const isActive = group.some((memory) => memory.id === state.selectedId) || openPickerKey === key;
+    if (isActive) marker.getElement().classList.add("is-active");
+    markers.set(key, marker);
   });
 }
 
@@ -652,12 +747,23 @@ function initMainMap() {
 
   mainMap.addControl(new mapboxgl.NavigationControl(), "top-right");
   mainMap.on("load", () => {
+    mainMap.resize();
     renderMarkers();
     renderLayerOptions();
     setHistoricLayer(state.activeLayerId);
     const selected = currentSelectedMemory();
     if (selected) focusMemory(selected);
   });
+
+  // 只呼叫一次 resize() 不夠——容器大小後續還可能因為字型延遲載入、
+  // 捲軸出現/消失等原因改變，導致 Mapbox 內部算的畫布尺寸跟實際大小
+  // 對不上，症狀就是「一放大縮小，標記全部跟著跑掉」。改成持續監控
+  // 地圖容器本身的實際大小，一有變化就自動校正，一次徹底解決這整類問題。
+  const mapContainer = document.getElementById("main-map");
+  if (mapContainer && window.ResizeObserver) {
+    const mapResizeObserver = new ResizeObserver(() => mainMap?.resize());
+    mapResizeObserver.observe(mapContainer);
+  }
 }
 
 function setPickerPoint(lngLat, placeName = "") {
@@ -978,6 +1084,10 @@ async function submitMemory(event) {
 }
 
 function bindEvents() {
+  window.addEventListener("resize", () => {
+    mainMap?.resize();
+  });
+
   els.searchInput.addEventListener("input", (event) => {
     state.keyword = event.target.value;
     state.currentPage = 1;
@@ -1075,16 +1185,146 @@ function bindEvents() {
   });
 }
 
+// ─── 首次進站操作導覽 ────────────────────────────────
+const TOUR_SEEN_KEY = "nanao_memory_tour_seen";
+const TOUR_STEPS = [
+  { target: "search-input", text: "在這裡搜尋人名、地名、主題或標籤，上面的分類跟下拉選單也可以縮小範圍。" },
+  { target: "main-map", text: "地圖上每個點都是一則記憶，滑鼠移過去可以先看標題預覽。" },
+  { target: "main-map", text: "點一下標記，就會看到完整的故事內容。" },
+  { target: "layer-toggle", text: "這裡可以切換不同年代的歷史地圖，看看同一個地方以前長什麼樣子。" },
+  { target: "fab-button", text: "想分享自己的記憶嗎？點這裡就可以投稿，審核通過後會出現在地圖上。" }
+];
+
+let tourIdx = 0;
+let tourRaf = null;
+
+function tourTick() {
+  const step = TOUR_STEPS[tourIdx];
+  const el = document.getElementById(step.target);
+
+  if (!el) {
+    // 目標元素還沒出現在畫面上（例如地圖還在載入），先把聚光燈藏起來，
+    // 等元素真的出現再顯示，避免聚光燈停在上一步的舊位置又突然跳過去。
+    els.tourSpotlight.classList.add("is-hidden");
+  } else {
+    const r = el.getBoundingClientRect();
+    const pad = 10;
+    els.tourSpotlight.classList.remove("is-hidden");
+    els.tourSpotlight.style.left = `${r.left - pad}px`;
+    els.tourSpotlight.style.top = `${r.top - pad}px`;
+    els.tourSpotlight.style.width = `${r.width + pad * 2}px`;
+    els.tourSpotlight.style.height = `${r.height + pad * 2}px`;
+
+    const tw = els.tourTooltip.offsetWidth || 320;
+    const th = els.tourTooltip.offsetHeight || 150;
+    let top = r.bottom + 16;
+    if (top + th > window.innerHeight - 16) top = r.top - th - 16;
+    top = Math.max(16, top);
+    let left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(16, Math.min(left, window.innerWidth - tw - 16));
+    els.tourTooltip.style.top = `${top}px`;
+    els.tourTooltip.style.left = `${left}px`;
+  }
+
+  tourRaf = requestAnimationFrame(tourTick);
+}
+
+function renderTourStep() {
+  const step = TOUR_STEPS[tourIdx];
+  const isLast = tourIdx === TOUR_STEPS.length - 1;
+  els.tourStepCount.textContent = `${tourIdx + 1} / ${TOUR_STEPS.length}`;
+  els.tourText.textContent = step.text;
+  els.tourNext.textContent = isLast ? "完成" : "下一步 →";
+  els.tourSpotlight.classList.add("is-hidden");
+}
+
+function finishTour() {
+  cancelAnimationFrame(tourRaf);
+  tourRaf = null;
+  els.tourOverlay.classList.add("hidden");
+  try {
+    localStorage.setItem(TOUR_SEEN_KEY, "1");
+  } catch {
+    /* 無痕模式等情況忽略 */
+  }
+}
+
+function startTour() {
+  tourIdx = 0;
+  els.tourOverlay.classList.remove("hidden");
+  renderTourStep();
+  tourTick();
+}
+
+function initTour() {
+  els.helpToggle.addEventListener("click", startTour);
+
+  els.tourNext.addEventListener("click", () => {
+    if (tourIdx === TOUR_STEPS.length - 1) {
+      finishTour();
+      return;
+    }
+    tourIdx += 1;
+    renderTourStep();
+  });
+  els.tourSkip.addEventListener("click", finishTour);
+
+  let alreadySeen = false;
+  try {
+    alreadySeen = !!localStorage.getItem(TOUR_SEEN_KEY);
+  } catch {
+    /* 無痕模式等情況忽略 */
+  }
+  if (!alreadySeen) {
+    setTimeout(startTour, 900);
+  }
+}
+
+// ─── 介面文字放大（Aa 按鈕）───────────────────────────
+// 透過 CSS 變數 --ui-text-scale 縮放 style.css 裡各處的 font-size，
+// 不用改版面結構，跟畫面上其他定位（地圖、標記、卡片）完全無關，安全。
+const TEXT_SCALE_KEY = "nanao_memory_text_scale";
+const TEXT_SCALE_STEPS = [1, 1.15, 1.3];
+
+function applyTextScale(scale) {
+  document.documentElement.style.setProperty("--ui-text-scale", scale);
+  const stepIndex = TEXT_SCALE_STEPS.indexOf(scale);
+  els.textScaleToggle.textContent = stepIndex > 0 ? `Aa${"+".repeat(stepIndex)}` : "Aa";
+}
+
+function initTextScale() {
+  let saved = 1;
+  try {
+    const stored = Number(localStorage.getItem(TEXT_SCALE_KEY));
+    saved = TEXT_SCALE_STEPS.includes(stored) ? stored : 1;
+  } catch {
+    /* 無痕模式等情況忽略 */
+  }
+  applyTextScale(saved);
+
+  els.textScaleToggle.addEventListener("click", () => {
+    const current = Number(getComputedStyle(document.documentElement).getPropertyValue("--ui-text-scale")) || 1;
+    const next = TEXT_SCALE_STEPS[(TEXT_SCALE_STEPS.indexOf(current) + 1) % TEXT_SCALE_STEPS.length];
+    applyTextScale(next);
+    try {
+      localStorage.setItem(TEXT_SCALE_KEY, String(next));
+    } catch {
+      /* 無痕模式等情況忽略 */
+    }
+  });
+}
+
 async function init() {
   populateSelect(els.villageSelect, villageOptions);
   populateSelect(els.eraSelect, eraOptions);
   renderFormCategories();
   bindEvents();
+  initTextScale();
   await loadMemories();
-  state.selectedId = state.memories[0]?.id || null;
   renderAll();
   initMainMap();
   initPickerMap();
+  initTour();
 }
 
 init();
