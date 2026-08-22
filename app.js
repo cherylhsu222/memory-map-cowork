@@ -1188,7 +1188,8 @@ function bindEvents() {
 // ─── 首次進站操作導覽 ────────────────────────────────
 const TOUR_SEEN_KEY = "nanao_memory_tour_seen";
 const TOUR_STEPS = [
-  { target: "search-input", text: "在這裡搜尋人名、地名、主題或標籤，上面的分類跟下拉選單也可以縮小範圍。" },
+  { target: "search-input", text: "在這裡搜尋人名、地名、主題或標籤，快速找到你想看的記憶。" },
+  { target: "filter-row", text: "這排是分類跟篩選：點一下「人物」「地景」這些分類按鈕，只看該類別的記憶；右邊兩個下拉選單可以再依村落、年代縮小範圍。" },
   { target: "main-map", text: "地圖上每個點都是一則記憶，滑鼠移過去可以先看標題預覽。" },
   { target: "main-map", text: "點一下標記，就會看到完整的故事內容。" },
   { target: "layer-toggle", text: "這裡可以切換不同年代的歷史地圖，看看同一個地方以前長什麼樣子。" },
