@@ -870,13 +870,42 @@ async function searchGeoapify(query) {
   }));
 }
 
+// OpenStreetMap 的免費地理定位服務，不用申請帳號、不用金鑰。資料是社群貢獻的，
+// 對南澳這種鄉下小路的涵蓋率有時候比 Mapbox／Geoapify 好，拿來補涵蓋率的缺口。
+// 使用規範只要求不要太密集查詢（每秒不超過 1 次）——這裡只在使用者按下搜尋鈕
+// 時才呼叫一次，遠低於這個限制。
+async function searchNominatim(query) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("countrycodes", "tw");
+  url.searchParams.set("limit", "5");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("accept-language", "zh-TW");
+
+  const response = await fetch(url.toString());
+  const json = await response.json();
+  return (Array.isArray(json) ? json : []).map((item) => ({
+    title: item.name || item.display_name?.split("，")[0] || query,
+    subtitle: item.display_name || "OpenStreetMap",
+    placeName: item.display_name || item.name || query,
+    center: [Number(item.lon), Number(item.lat)],
+    source: "OpenStreetMap"
+  }));
+}
+
 async function fetchPickerResults(query) {
   const local = searchLocal(query);
-  const [mapboxResults, geoResults] = await Promise.allSettled([searchMapbox(query), searchGeoapify(query)]);
+  const [mapboxResults, geoResults, osmResults] = await Promise.allSettled([
+    searchMapbox(query),
+    searchGeoapify(query),
+    searchNominatim(query)
+  ]);
   const merged = [
     ...local,
     ...(mapboxResults.status === "fulfilled" ? mapboxResults.value : []),
-    ...(geoResults.status === "fulfilled" ? geoResults.value : [])
+    ...(geoResults.status === "fulfilled" ? geoResults.value : []),
+    ...(osmResults.status === "fulfilled" ? osmResults.value : [])
   ];
   return dedupeResults(merged).slice(0, 8);
 }
