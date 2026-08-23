@@ -124,6 +124,7 @@ const state = {
   popupExpanded: false,
   formCategory: "生活",
   pickerLngLat: [...defaultCenter],
+  pickerLocationSet: false,
   pickerResults: [],
   activeLayerId: "none",
   reportTargetMemory: null,
@@ -766,8 +767,14 @@ function initMainMap() {
   }
 }
 
-function setPickerPoint(lngLat, placeName = "") {
+function setPickerPoint(lngLat, placeName = "", isUserAction = true) {
   state.pickerLngLat = [lngLat.lng, lngLat.lat];
+  // 使用者真的動過地圖 picker（搜尋、點地圖、用目前位置），才算「有設定精確位置」。
+  // 送出記憶時要靠這個判斷，不能只看「地點」文字欄位有沒有打字——那個欄位是
+  // 給模糊描述用的（例如「武塔村附近」），跟精確經緯度是兩件事。
+  // isUserAction=false 專門給地圖初始化時「把 picker 擺到預設中心點」那次呼叫用，
+  // 那不是使用者的選擇，不能算數。
+  if (isUserAction) state.pickerLocationSet = true;
   els.pickerMessage.textContent = `目前選點：${lngLat.lat.toFixed(5)}, ${lngLat.lng.toFixed(5)}`;
   if (placeName) {
     els.placeInput.value = placeName;
@@ -797,7 +804,7 @@ function initPickerMap() {
   });
 
   pickerMap.on("load", () => {
-    setPickerPoint({ lng: defaultCenter[0], lat: defaultCenter[1] }, "");
+    setPickerPoint({ lng: defaultCenter[0], lat: defaultCenter[1] }, "", false);
   });
 
   pickerMap.on("click", (event) => setPickerPoint(event.lngLat, els.placeInput.value.trim()));
@@ -1066,7 +1073,13 @@ async function submitMemory(event) {
     return;
   }
 
-  const hasLocation = Boolean(placeName);
+  // 「地點」文字欄位是給模糊描述用的（例如「武塔村附近」），跟下面地圖 picker
+  // 選出來的精確經緯度是兩件不同的事——只看文字欄位有沒有打字來決定要不要存
+  // 座標，會把「隨便打了幾個字但沒動過地圖」的情況也存成一組座標（而且還是
+  // picker 當下剛好停在哪就存哪，可能是上一次投稿留下的舊位置），地圖上就會
+  // 顯示在錯的地方。要用「使用者有沒有真的透過搜尋／點地圖／目前位置設定過
+  // picker」（state.pickerLocationSet）來判斷，兩者各自獨立存。
+  const hasPreciseLocation = state.pickerLocationSet;
 
   setFeedback("送出中…");
 
@@ -1084,9 +1097,9 @@ async function submitMemory(event) {
     const { error: insertError } = await supabase.from("memories").insert({
       title,
       content,
-      place_name: hasLocation ? placeName : null,
-      latitude: hasLocation ? Number(state.pickerLngLat[1].toFixed(6)) : null,
-      longitude: hasLocation ? Number(state.pickerLngLat[0].toFixed(6)) : null,
+      place_name: placeName || null,
+      latitude: hasPreciseLocation ? Number(state.pickerLngLat[1].toFixed(6)) : null,
+      longitude: hasPreciseLocation ? Number(state.pickerLngLat[0].toFixed(6)) : null,
       period_text: periodText,
       sharer_name: sharerName,
       category: state.formCategory,
@@ -1175,6 +1188,11 @@ function bindEvents() {
   els.fabButton.addEventListener("click", () => {
     els.composerPanel.classList.remove("hidden");
     els.fabButton.classList.add("hidden");
+    // 每次重新打開投稿表單都要是全新的一次，不能沿用「上一次投稿時 picker
+    // 停在哪」的位置——不然這次只打了地點文字、沒動 picker，送出時就會
+    // 悄悄存成上一筆記憶的座標，地圖上顯示的位置就是錯的。
+    state.pickerLocationSet = false;
+    if (pickerMap) setPickerPoint({ lng: defaultCenter[0], lat: defaultCenter[1] }, "", false);
   });
 
   els.closeComposer.addEventListener("click", () => {
